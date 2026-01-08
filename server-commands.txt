@@ -1,0 +1,33 @@
+# Magento 2 Complete Installation Log
+# Date: Jan 8, 2026 | Server: AWS Debian 12
+
+## PHP 8.3 Setup
+curl -fsSL https://packages.sury.org/php/apt.gpg | sudo gpg --dearmor -o /usr/share/keyrings/php-sury.gpg
+sudo apt install php8.3-fpm php8.3-mysql php8.3-xml php8.3-curl php8.3-gd php8.3-redis
+php -v  # PHP 8.3.11
+
+## MySQL Setup
+sudo apt install default-mysql-server
+mariadb-secure-installation
+mysql -u root -p
+CREATE DATABASE magento; CREATE USER magento IDENTIFIED BY magento123!; GRANT ALL ON magento.* TO magento;
+
+## Magento Install
+cd /var/www/magento
+composer create-project magento/project-community-edition .
+./bin/magento setup:install --base-url=https://test.mgt.com --db-name=magento --db-user=magento --db-password=magento123! --admin-user=admin --admin-password=admin123! --search-engine=elasticsearch8 --elasticsearch-host=localhost
+
+## Permissions
+sudo chown -R test-ssh:clp /var/www/magento
+chmod -R 755 /var/www/magento
+
+## Redis Config
+./bin/magento setup:config:set --cache-backend=redis --cache-backend-redis-server=127.0.0.1 --cache-backend-redis-db=0
+./bin/magento setup:config:set --page-cache=redis --page-cache-redis-server=127.0.0.1 --page-cache-redis-db=1
+./bin/magento setup:config:set --session-save=redis --session-save-redis-db=2
+
+## Verification
+./bin/magento --version  # 2.4.8-p3
+redis-cli ping  # PONG
+curl localhost:9200  # ES response
+nginx -t  # syntax ok
